@@ -1,6 +1,6 @@
 Package: shinyTempSignal
 Title: Explore Temporal Signal of Molecular Phylogenies
-Version: 0.0.2
+Version: 0.0.3
 Authors@R: 
     	c(person("Guangchuang", "Yu", email = "guangchuangyu@gmail.com", role = c("aut", "cre", "cph"), 
                 comment = c(ORCID = "0000-0002-6485-8781")),
@@ -10,20 +10,20 @@ Authors@R:
 Description: Sequences sampled at different time points can be used to infer molecular phylogenies on natural time scales, but if the sequences records inaccurate sampling times, that are not the actual sampling times, then it will affect the molecular phylogenetic analysis. This shiny application helps exploring temporal characteristics of the evolutionary trees through linear regression analysis and with the ability to identify and remove incorrect labels.
 License: GPL-3
 Depends: R (>= 3.3.0)
-Imports: ape, aTSA, Cairo, config (>= 0.3.1), forecast, ggplot2,
-        ggpubr, ggtree, golem (>= 0.3.1), shiny (>= 1.6.0),
-        shinydashboard, shinyjs, stringr, treeio, TSA
+Imports: ape, Cairo, config (>= 0.3.1), DescTools, forecast, ggplot2,
+        ggprism, ggpubr, ggtree, golem (>= 0.3.1), shiny (>= 1.6.0),
+        shinydashboard, shinyjs, stringr, treeio
 Suggests: attempt, conflicted, DT, glue, htmltools, processx, testthat
         (>= 3.0.0), thinkr
 Encoding: UTF-8
 RoxygenNote: 7.1.2
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2022-04-13 07:57:33 UTC; ygc
+Packaged: 2022-07-06 00:57:47 UTC; ygc
 Author: Guangchuang Yu [aut, cre, cph]
     (<https://orcid.org/0000-0002-6485-8781>),
   Xuanan Zhu [aut],
   Jianfeng Lin [ctb]
 Maintainer: Guangchuang Yu <guangchuangyu@gmail.com>
 Repository: CRAN
-Date/Publication: 2022-04-14 09:20:02 UTC
+Date/Publication: 2022-07-06 06:30:02 UTC

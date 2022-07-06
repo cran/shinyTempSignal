@@ -6,6 +6,7 @@
 #' @import ggtree
 #' @import ggplot2
 #' @import stringr
+#' @import ggprism
 #' @import Cairo
 #' @importFrom shinyjs toggle
 #' @rawNamespace import(ggpubr, except = rotate)
@@ -15,10 +16,7 @@
 #' @importFrom treeio read.codeml
 #' @importFrom treeio merge_tree
 #' @importFrom treeio rescale_tree
-#' @importFrom TSA runs
 #' @importFrom forecast forecast
-#' @importFrom aTSA adf.test
-#' @importFrom stats acf
 #' @importFrom stats cor
 #' @importFrom stats lm
 #' @importFrom stats qqnorm
@@ -26,6 +24,9 @@
 #' @importFrom stats pt
 #' @importFrom stats shapiro.test
 #' @importFrom stats ts
+#' @importFrom stats acf
+#' @importFrom DescTools RunsTest
+
 #' @noRd
 app_server <- function( input, output, session ) {
   # Your application server logic 
@@ -73,7 +74,11 @@ app_server <- function( input, output, session ) {
   vals <- reactiveValues(
     keeprows=rep(TRUE, 1),
     rightkeep=rep(TRUE, 1),
-    upkeep=rep(TRUE, 1)
+    upkeep=rep(TRUE, 1),
+    dataTorF=rep(TRUE,1),
+    upval=rep(TRUE,1),
+    downval=rep(TRUE,1),
+    pvalue=NULL
   )
   
   treeData <- reactiveValues(
@@ -83,6 +88,17 @@ app_server <- function( input, output, session ) {
     down_labelname=c()
   )
   
+  mySetTheme <- function()
+  {
+    mySetTheme <- theme_prism(base_size = 14, border = TRUE)+
+      theme(panel.grid.major = element_line(colour = "grey",
+                                            size = 0.5,
+                                            linetype = "dotted"))+
+      theme(panel.background =  element_rect(fill = "linen", 
+                                             colour = "grey50"))
+    return(mySetTheme)
+  }
+    
   category <- reactiveValues()
   abnormal <- reactiveValues()
   
@@ -100,7 +116,6 @@ app_server <- function( input, output, session ) {
   observeEvent(input$plot2_click, {
     tree_data <- tree_data()
     res <- nearPoints(tree_data, input$plot2_click, allRows=TRUE)
-    
     vals$keeprows <- xor(vals$keeprows, res$selected_)
   })
   
@@ -109,6 +124,10 @@ app_server <- function( input, output, session ) {
     tree_data <- tree_data()
     res <- brushedPoints(tree_data, input$plot2_brush, allRows=TRUE)
     vals$keeprows <- xor(vals$keeprows, res$selected_)
+  })
+  
+  observeEvent(input$autodele,{
+    vals$keeprows<-vals$dataTorF
   })
   
   # Reset all points
@@ -162,40 +181,60 @@ app_server <- function( input, output, session ) {
     tree_data <- tree_data()
     keep <- tree_data[vals$keeprows, , drop = FALSE]
     exclude <- tree_data[!vals$keeprows, , drop = FALSE]
-    m <- lm(divergence~date, tree_data)
+    if(input$xory == "Y")
+    {
+      m <- lm(divergence~date, tree_data)
+    }
+    else
+    {
+      m <- lm(date~divergence, tree_data)
+    }
     rst <- rstudent(m)
-    upvalue <- tree_data[(0.5 - abs(pt(rst, m$df.residual) - 0.5)) 
-                         < input$pvalue / 2 & rst > 0, ]
-    downvalue <- tree_data[(0.5 - abs(pt(rst, m$df.residual) - 0.5)) 
-                           < input$pvalue / 2 & rst < 0, ]
+    if(!isTRUE(input$pvalue == vals$pvalue))
+    {
+      vals$upval <- c((0.5 - abs(pt(rst, m$df.residual) - 0.5))  
+                      < input$pvalue / 2 & rst > 0)
+      vals$downval <- c((0.5 - abs(pt(rst, m$df.residual) - 0.5))  
+                        < input$pvalue / 2 & rst < 0)
+      vals$dataTorF <- vals$upval==vals$downval
+      vals$pvalue <- input$pvalue
+    }
+    upvalue <- tree_data[vals$upval, ]
+    downvalue <- tree_data[vals$downval,]
+    upvalueHX <- (upvalue$date)^2+upvalue$divergence
+    downvalueHX <- (downvalue$date)^2+downvalue$divergence
     treeData$up_labelname <- row.names(upvalue)
     treeData$down_labelname <- row.names(downvalue)
-    u <- 1
-    v <- 1
-    for (i in 1:(length(keep$divergence))) {
-      if ((isTRUE(keep$divergence[i] == upvalue$divergence[u]) &
-           isTRUE(keep$date[i] == upvalue$date[u]))
-          || (isTRUE(keep$divergence[i] == downvalue$divergence[v]) & 
-              isTRUE(keep$date[i] == downvalue$date[v]))) {
-        vals$rightkeep[i] <- FALSE
-        if (isTRUE(keep$divergence[i] == upvalue$divergence[u]) &
-            isTRUE(keep$date[i] == upvalue$date[u])) {
-          vals$upkeep[i] <- TRUE
-          vals$downkeep[i] <- FALSE
-          u <- u+1
-        }
-        else{
-          vals$upkeep[i] <- FALSE
-          vals$downkeep[i] <- TRUE
-          v <- v+1
-        }
-      }
-      else{
-        vals$rightkeep[i] <- TRUE
-        vals$upkeep[i] <- FALSE
-        vals$downkeep[i] <- FALSE
-      }
-    }
+    # u <- 1
+    # v <- 1
+    # for (i in 1:(length(keep$divergence))) {
+    #   if ((isTRUE(keep$divergence[i] == upvalue$divergence[u]) &
+    #        isTRUE(keep$date[i] == upvalue$date[u]))
+    #       || (isTRUE(keep$divergence[i] == downvalue$divergence[v]) & 
+    #           isTRUE(keep$date[i] == downvalue$date[v]))) {
+    #     vals$rightkeep[i] <- FALSE
+    #     if (isTRUE(keep$divergence[i] == upvalue$divergence[u]) &
+    #         isTRUE(keep$date[i] == upvalue$date[u])) {
+    #       vals$upkeep[i] <- TRUE
+    #       vals$downkeep[i] <- FALSE
+    #       u <- u+1
+    #     }
+    #     else{
+    #       vals$upkeep[i] <- FALSE
+    #       vals$downkeep[i] <- TRUE
+    #       v <- v+1
+    #     }
+    #   }
+    #   else{
+    #     vals$rightkeep[i] <- TRUE
+    #     vals$upkeep[i] <- FALSE
+    #     vals$downkeep[i] <- FALSE
+    #   }
+    # }
+    keepHX <- (keep$date)^2+keep$divergence
+    vals$upkeep <- keepHX %in% upvalueHX
+    vals$downkeep <- keepHX %in% downvalueHX
+    vals$rightkeep <- vals$upkeep == vals$downkeep
     wrong_upkeep <- keep[vals$upkeep, , drop = FALSE]
     wrong_downkeep <- keep[vals$downkeep, , drop = FALSE]
     true_keep     <- keep[vals$rightkeep, , drop = FALSE]
@@ -222,9 +261,11 @@ app_server <- function( input, output, session ) {
                           aes(x=date, y=divergence), method="lm",
                           se=FALSE, colour=input$color2)
     }
+    p2 <- p2 + mySetTheme() 
     return(p2)
   })
   output$distPlot3 <- renderPlot({
+    time <- NULL
     tree_data <- tree_data()
     keep <- tree_data[vals$keeprows, , drop = FALSE]
     x <- keep$date
@@ -235,34 +276,56 @@ app_server <- function( input, output, session ) {
     y <- fra$res
     lm3 <- lm(y~x)
     residuals_3 <- rstudent(lm3)
-    p3 <- plot(y=residuals_3, x=x, type="l", xlab="time", ylab="residuals") + 
-      graphics::points(y=residuals_3, x=x, col="blue")
+    fra$res <- residuals_3
+    p3 <- ggplot(fra,
+                 aes(x=time, y=res)) + geom_point(color="blue") + 
+      geom_line()+labs(title="residuals plot")+mySetTheme()
     return(p3)
   })
   output$distPlot4 <- renderPlot({
+    time <- NULL
+    lag <- NULL
     tree_data <- tree_data()
     keep <- tree_data[vals$keeprows, , drop = FALSE]
     x <- keep$date
-    y <- keep$divergence
+    y <- keep$divergence 
     fra <- data.frame(time=x,div=y)
     fra <- fra[order(fra$time),]
     x <- fra$time
     y <- fra$div
     lm4 <- lm(y~x)
     residuals_4 <- rstudent(lm4)
-    p4 <- acf(residuals_4)
+    bacf <- stats::acf(residuals_4)
+    bacf$acf = bacf$acf[-1, , , drop = FALSE]
+    bacf$lag = bacf$lag[-1, , , drop = FALSE]
+    h <- stats::sd(abs(as.numeric(bacf$acf)))*2
+    bacfdf <- with(bacf, data.frame(lag, acf))
+    p4 <- ggplot(data=bacfdf, mapping = aes(x=lag, y=acf))+
+      geom_segment(mapping = aes(xend = lag, yend = 0)
+                   , color='black', size = 1,alpha=I(1/2))+
+      geom_hline(yintercept = h, linetype = 2, color = 'darkblue')+
+      geom_hline(yintercept = -h, linetype = 2, color = 'darkblue')+
+      geom_hline(yintercept = 0, linetype = 1, color = 'black')+
+      labs(title="ACF plot")+theme(plot.title = element_text(hjust = 0.5))+
+      mySetTheme()
     print(p4)
   })
   output$distPlot5 <- renderPlot({
+    time <- NULL
     tree_data <- tree_data()
     keep    <- tree_data[vals$keeprows, , drop = FALSE]
     x <- keep$date
     y <- keep$divergence
-    lm5 <- lm(y~x)
-    residuals_5 <- rstudent(lm5)
-    return(qqnorm(residuals_5))
+    fra <- data.frame(time=x, res=y)
+    lm3 <- lm(y~x)
+    residuals_3 <- rstudent(lm3)
+    fra$res <- residuals_3
+    p5 <-ggplot(fra,aes(sample=res))+
+      stat_qq()+labs(title="Normal Q-Q plot")+mySetTheme()
+    return(p5)
   })
   output$distPlot6 <- renderPlot({
+    time <- NULL
     tree_data <- tree_data()
     keep <- tree_data[vals$keeprows, , drop = FALSE]
     x <- keep$date
@@ -294,15 +357,15 @@ app_server <- function( input, output, session ) {
     dwelling <- forecast::na.interp(dwelling)
     if (input$fmethod == "ARIMA") {
       p<- dwelling %>% forecast::auto.arima() %>% forecast::forecast(
-        as.numeric(input$hstep)) %>% autoplot(
+        as.numeric(input$hstep)) %>% ggplot2::autoplot(
           xlab = "Year", ylab = "residuals"
-        )
+        )+mySetTheme()
     }
     if (input$fmethod == "ETS") {
       p<- dwelling %>% forecast::ets() %>% forecast::forecast(
-        as.numeric(input$hstep)) %>% autoplot(
+        as.numeric(input$hstep)) %>% ggplot2::autoplot(
           xlab = "Year", ylab = "residuals"
-        )
+        )+mySetTheme()
     }
     print(p)
   })
@@ -349,7 +412,7 @@ app_server <- function( input, output, session ) {
     summary[5, 2] <- summary(lm.rtt)$r.squared
     summary[6, 2] <- summary(lm.rtt)[["sigma"]]
     summary[7, 2] <- shapiro.test(rstudent(lm(df)))[2]
-    summary[8, 2] <- runs(rstudent(lm(df)))
+    summary[8, 2] <- DescTools::RunsTest(rstudent(lm(df)))$p.value
     print(summary)
   },
   digits = 5, width = 8)
