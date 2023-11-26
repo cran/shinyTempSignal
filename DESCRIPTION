@@ -1,6 +1,6 @@
 Package: shinyTempSignal
 Title: Explore Temporal Signal of Molecular Phylogenies
-Version: 0.0.3
+Version: 0.0.4
 Authors@R: 
     	c(person("Guangchuang", "Yu", email = "guangchuangyu@gmail.com", role = c("aut", "cre", "cph"), 
                 comment = c(ORCID = "0000-0002-6485-8781")),
@@ -12,18 +12,18 @@ License: GPL-3
 Depends: R (>= 3.3.0)
 Imports: ape, Cairo, config (>= 0.3.1), DescTools, forecast, ggplot2,
         ggprism, ggpubr, ggtree, golem (>= 0.3.1), shiny (>= 1.6.0),
-        shinydashboard, shinyjs, stringr, treeio
-Suggests: attempt, conflicted, DT, glue, htmltools, processx, testthat
-        (>= 3.0.0), thinkr
+        shinydashboard, shinyjs, stringr, tidytree, treeio, ggpmisc
+Suggests: attempt, conflicted, glue, htmltools, processx, testthat (>=
+        3.0.0), thinkr
 Encoding: UTF-8
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.3
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2022-07-06 00:57:47 UTC; ygc
+Packaged: 2023-11-26 16:30:55 UTC; HUAWEI
 Author: Guangchuang Yu [aut, cre, cph]
     (<https://orcid.org/0000-0002-6485-8781>),
   Xuanan Zhu [aut],
   Jianfeng Lin [ctb]
 Maintainer: Guangchuang Yu <guangchuangyu@gmail.com>
 Repository: CRAN
-Date/Publication: 2022-07-06 06:30:02 UTC
+Date/Publication: 2023-11-26 16:50:02 UTC

@@ -4,106 +4,87 @@
 #'     DO NOT REMOVE.
 #' @import shiny
 #' @import shinydashboard
+
 #' @importFrom shinyjs useShinyjs
 #' @noRd
 app_ui <- function(request) {
   tagList(
-    dashboardPage(skin="blue", 
-                  dashboardHeader(title="Temporal Signal"),
-                  dashboardSidebar(
-                    useShinyjs(),
-                    title="Please select a file type:",
-                    checkboxInput("type4","nwk"),
-                    checkboxInput("type5", "tree"),
-                    fileInput("file1", "choose a tree", accept="nwk"),
-                    fileInput("file2", "choose a beast_file", accept="tree"),
-                    fileInput("file3", "choose a mlc_file"),
-                    fileInput("file4", "choose a rst_file"),
-                    actionButton("fileinput", "submit"),
-                    sidebarMenu(menuItem("Sample Dates", tabName="Dates"),
-                                menuItem("Root-to-tip", tabName="root")),   
-                    title="Choose a way to parse dates:",
-                    checkboxInput("type1", "Defined just by its order"),
-                    checkboxInput("type2", 
-                                  "Defined by a prefix and its order"),
-                    checkboxInput("type3", 
-                                  "Defined by regular expression (REGEX)"),
-                    selectInput("format", 
-                                "Dates format:", 
-                                c("yy", "yyyy", "yyyy-MM-dd", "MM-dd-yyyy", 
-                                  "yyyy/MM/dd", "yyyy.MM.dd", "MM/dd/yyyy", 
-                                  "MM.dd.yyyy")),
-                    selectInput("order1", 
-                                "numerical_order:", 
-                                c("1", "2", "3", "4", "5", 
-                                  "6", "7", "8", "last")), 
-                    textInput("prefix", "Date_prefix:"), 
-                    selectInput("order2", 
-                                "prefix_order:", c("first", "last")), 
-                    textInput("REGEX", "regular expression:") 
-                  ),
-                  ## Design point to open the menu interface :tree Dates root
-                  dashboardBody(
-                    tabItems(
-                      tabItem(tabName="Dates",
-                              tableOutput("Sample")
-                      ),
-                      tabItem(tabName="root",
-                              box(plotOutput("distplot1"), width=8),
-                              box(width=4,
-                                  sliderInput("height", 
-                                              "height:", 0, 5000, 380),
-                                  textInput("color3", 
-                                            "color:", value="black"),
-                                  sliderInput("size", 
-                                              "size:", 0, 10, 1, step=0.1),
-                                  checkboxInput("tip", "tiplab:", TRUE),
-                                  sliderInput("tipsize", 
-                                              "tiplab_size:", 
-                                              0, 10, 3, step=0.1)),
-                              mainPanel(textOutput("text1")),
-                              column(width=6,
-                                     plotOutput("distPlot2", height=500,
-                                                click="plot2_click",
-                                                brush=brushOpts(
-                                                  id="plot2_brush"
-                                                )
-                                     ),
-                                     box(plotOutput("distPlot3", 
-                                                    height=500), width=10),
-                              ),
-                              box(width=4,
-                                  selectInput("distance", "distance:", 
-                                              c("dN", "dS", 
-                                                "dN_vs_dS")),
-                                  selectInput("xory", "axis:", 
-                                              c("Y", "X")),
-                                  selectInput("method", "method:", 
-                                              c("rms", "rsquared", 
-                                                "correlation")),
-                                  checkboxInput("tip2", "tiplab:", TRUE),
-                                  numericInput("pvalue", "pvalue<:", 
-                                               value = "0.05"),
-                                  textInput("color2", 
-                                            "line.color:", value = "blue"),
-                                  actionButton("exclude_toggle", 
-                                               "Toggle points"),
-                                  actionButton("autodele", "autodele"),
-                                  actionButton("exclude_reset", "Reset"),
-                                  checkboxInput("update_data", 
-                                                "live updates", FALSE)),
-                              tableOutput("Summary"),
-                              box(plotOutput("distPlot4"), width=4),
-                              box(plotOutput("distPlot5"), width=4),
-                              box(plotOutput("distPlot6", 
-                                             height=500), width=10),
-                              selectInput("fmethod", "method:", 
-                                          c("ETS", "ARIMA")),
-                              textInput("hstep", 
-                                        "h:", value="1"),
-                      )
-                    )
+    dashboardPage(
+      skin="yellow",
+      dashboardHeader(title = "shinyTempSignal"),
+      dashboardSidebar(
+        radioButtons(inputId = "filetype",
+                     "choose your file type",
+                     choiceNames = list("Newick","beast","NEXUS","phylip"),
+                     choiceValues = list("Newick","beast","NEXUS","phylip")),
+        fileInput("treefile","choose your tree file (necessary)"),
+        #tags$h4("This file is ",tags$strong("not necessary"),"."),
+        fileInput("outdata","choose your corresponding external data(not necessary)"),
+        textInput("regression","a regrular expression to match your date"),
+        selectInput("format", 
+                    "Dates format:", 
+                    c("yy", "yyyy", "yyyy-MM-dd", "MM-dd-yyyy", 
+                      "yyyy/MM/dd", "yyyy.MM.dd", "MM/dd/yyyy", 
+                      "MM.dd.yyyy")),
+        
+        actionButton("fileinput","submit"),
+        sidebarMenu(
+          menuItem("Sample Dates", tabName="Dates"),
+          menuItem("Subtree_regression_intergration",tabName = "node"),
+          menuItem("tree-structure",tabName = "tree"),
+          menuItem("Root-to-tip",tabName = "regression"),
+          menuItem("out_data_analysis", tabName="out"),
+          menuItem("subtree_outdata__regression_intergration",tabName = "out_data_regression")
+        )
+      ),
+      dashboardBody(
+        tabItems(
+          tabItem(tabName = "Dates",dataTableOutput("datetable"),
+                  downloadButton("download1","download")),
+          tabItem(tabName = "node",dataTableOutput("dataframe"),
+                  downloadButton("download2.table","download")),
+          tabItem(tabName = "out_data_regression",dataTableOutput("out_dataframe"),
+                  downloadButton("download3.table","download")),
+          tabItem(tabName = "tree",
+                  
+                  
+                  box(plotOutput("plot1",click = "plotClick"),width = 8),
+                  
+                  box(width = 4,
+                      textInput("node","subset_node"),
+                      sliderInput("height","height:", 0, 5000, 380),
+                      textInput("color3", 
+                                "color:", value="black"),
+                      sliderInput("size", 
+                                  "size:", 0, 10, 1, step=0.1),
+                      
+                      checkboxInput("tip", "tiplab:", FALSE),
+                      sliderInput("tipsize", 
+                                  "tiplab_size:", 
+                                  0, 10, 3, step=0.1),
+                      
                   )
+                  
+          ),
+          tabItem(tabName = "regression",box(width = 8,plotOutput("plot2")),
+                  box(width = 4,numericInput("pvalue", "pvalue<:", 
+                                             value = "0.05"),
+                      textInput("color2", 
+                                "line.color:", value = "blue"),
+                      actionButton("delete", "auto-delet"),
+                      actionButton("reset", "Reset")),
+                  dataTableOutput("outliers")),
+          tabItem(tabName = "out",
+                  box(width = 8,plotOutput("plot3")),
+                  box(width = 4,
+                      selectInput("x_var","please choose your x var",choices = NULL),
+                      selectInput("y_var","please choose your Y var",choices = NULL),
+                      actionButton("regression_btn","regression_analysis")),
+                  box(dataTableOutput("data_table"),width = 12),
+                  box(dataTableOutput("outliers2"),width = 12)
+          )
+        )
+      )
     )
   )
 }
