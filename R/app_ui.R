@@ -96,7 +96,7 @@ app_ui <- function(request) {
                           0, 10, 3, step = 0.1),
               radioButtons(
           inputId = "choose_analysis",
-          "choose the point to displsy in the tree",
+          "choose the point to display in the tree",
           choiceNames = list("only_tree","Temporal_signal", "Phylogenetic_signal"),
           choiceValues = list("only_tree","Temporal_signal", "Phylogenetic_signal")
         )
@@ -178,14 +178,7 @@ app_ui <- function(request) {
   )
 }
 
-#' Add external Resources to the Application
-#'
-#' This function is internally used to add external
-#' resources inside the Shiny application.
-#'
-#' @import shiny
-#' @importFrom golem add_resource_path activate_js favicon bundle_resources
-#' @noRd
+
 #' Add external Resources to the Application
 #' 
 #' This function is internally used to add external 
