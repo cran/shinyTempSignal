@@ -1,12 +1,12 @@
 #' The application User-Interface
 #'
-#' @param request Internal parameter for `{shiny}`.
-#'     DO NOT REMOVE.
+#' @param request Internal parameter
 #' @import shiny
 #' @import shinydashboard
 
 #' @importFrom shinyjs useShinyjs
-#' @noRd
+#' @importFrom shinyWidgets colorPickr
+
 app_ui <- function(request) {
   tagList(
     dashboardPage(
@@ -75,32 +75,49 @@ app_ui <- function(request) {
             box(
               plotOutput("plot1", click = "plotClick"),
               width = 8,
-              downloadButton("downloadplot1", "download")
+              height = 850              
             ),
-            
-            
+                       
             box(
               width = 4,
-              textInput("node", "subset_node"),
-              sliderInput("height", "height:", 0, 5000, 380),
-              textInput("color3",
-                        "color:", value = "black"),
-              sliderInput("size",
-                          "size:", 0, 10, 1, step = 0.1),
+              height = 850,
+              sliderInput("height", "figure height:", 0, 5000, 835),
+              fluidRow(
+                column(width = 6, textInput("node", "subset_node")),
+                column(width = 6, shinyWidgets::colorPickr("color3",label="line color:", selected  = "#020202"))),
+              fluidRow(
+              column(width = 6, shinyWidgets::colorPickr( "down_color",label="down_color",selected  =  "#6a73cf")),
+              column(width = 6, shinyWidgets::colorPickr( "up_color",label="up_color",selected  ="#f26115" ))
+              ),
+              sliderInput("size", "line size:", 0, 10, 1, step = 0.1),
               
-              checkboxInput("tip", "tiplab:", FALSE),
-              checkboxInput("tip_point", "tip_point:", FALSE),
-              checkboxInput("geom_nodelab", "node number", TRUE),
-              sliderInput("tipsize",
-                          "tiplab_size:",
+            fluidRow(
+              column(width = 4, checkboxInput("tip_point", "tip_point", FALSE)),
+              column(width = 4, checkboxInput("tip", "tiplab", FALSE)),
+              column(width = 4, checkboxInput("geom_nodelab", "node number", TRUE))),
+              sliderInput("tipsize","tip_point_size:",
                           0, 10, 3, step = 0.1),
+             fluidRow(column(width = 6, radioButtons(
+          inputId = "layout",
+          "tree layout",
+          choiceNames = list("rectangular", "roundrect", "slanted", "circular", "daylight", "ellipse", "fan"),
+          choiceValues = list("rectangular", "roundrect", "slanted", "circular", "daylight", "ellipse", "fan")
+        )),
+        column(width = 6,radioButtons(inputId = "line_type","tree line type",
+        choiceNames = list("solid", "twodash", "longdash", "dotted", "dashed", "dotdash", "blank"),
+        choiceValues = list("solid", "twodash", "longdash", "dotted", "dashed", "dotdash", "blank")
+        ))
+        ),
+             
+              
               radioButtons(
           inputId = "choose_analysis",
           "choose the point to display in the tree",
           choiceNames = list("only_tree","Temporal_signal", "Phylogenetic_signal"),
           choiceValues = list("only_tree","Temporal_signal", "Phylogenetic_signal")
-        )
-              
+        ),
+              downloadButton("downloadplot1", "download(pdf)"),
+              downloadButton("tree1", "download(newick)"),    
             )
             
           ),
@@ -110,11 +127,11 @@ app_ui <- function(request) {
               width = 8,
               plotOutput("plot2"),
              fluidRow( 
-              column(width = 3,downloadButton("downloadplot2", "download")),
-              column(width = 3,actionButton("delete", "autodel")),
-              column(width = 3,actionButton("reset", "Reset")),
-              column(width = 3,textInput("temp_node","node",value = ""))),
-              checkboxInput("plot_all", "plot whole tree regression", TRUE),
+              column(width = 3, downloadButton("downloadplot2", "download")),
+              column(width = 3, actionButton("delete", "autodel")),
+              column(width = 3, actionButton("reset", "Reset")),
+              column(width = 3, textInput("temp_node","node",value = ""))),
+              fluidRow(checkboxInput("plot_all", "plot whole tree regression", TRUE)),
               fluidRow(column(
                 6, numericInput("pvalue", "pvalue<:",    
                                 value = "0.05")
@@ -131,6 +148,10 @@ app_ui <- function(request) {
               tableOutput("Summary"),
               downloadButton("download_dt2", "download")
             ),
+            box(width = 8, plotOutput("multi_regression")),
+            box(width = 4,
+            textInput("multi_node","input multi nodes(comma-separated)"),
+            actionButton("update_button", "submit nodes")),
             box(width = 12,
             dataTableOutput("dataframe"),
             downloadButton("download2.table", "download")),
@@ -147,7 +168,7 @@ app_ui <- function(request) {
               fluidRow(
                 column(3,selectInput("x_var", "please choose your x var", choices = NULL),),
                 column(3, selectInput("y_var", "please choose your Y var", choices = NULL),),
-                column(3,actionButton("regression_btn", "regression_analysis")),
+                column(3,actionButton("regression_btn", "update_regression_analysis")),
                 column(3,checkboxInput("plot_all2", "plot whole tree regression", TRUE))
                 ),
                 fluidRow(
@@ -155,14 +176,22 @@ app_ui <- function(request) {
                 column(width = 3,actionButton("reset2", "Reset")),
                 column(width = 3,textInput("phylo_node","node",value = "")))
             ),
-            
+         
             box(
-              width = 4,
-              tableOutput("Summary2"),
-              downloadButton("download_dt_2", "download")
-             
+             width = 4,
+              fluidRow(column(width = 12,tableOutput("Summary2")), downloadButton("download_dt_2", "download")),
+              fluidRow(column(width = 12,verbatimTextOutput("correlation"))),
+               radioButtons(
+          inputId = "cortype",
+          "choose your correltion type",
+          choiceNames = list("PIC", "PGLS"),
+          choiceValues = list("PIC", "PGLS")
+        )
               
             ),
+            box(width = 8,plotOutput("multi_regression2")),
+            box(width = 4,textInput("multi_node2"," input multi nodes(comma-separated)"),
+                          actionButton("update_button2","submit nodes")),
             box(
               width = 12,
               dataTableOutput("out_dataframe"),
