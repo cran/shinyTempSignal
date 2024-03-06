@@ -12,6 +12,7 @@ Sequences sampled at different time points can be used to infer molecular phylog
 Useful links:
 \itemize{
   \item \url{https://github.com/YuLab-SMU/shinyTempSignal}
+  \item \url{https://www.sciencedirect.com/science/article/pii/S167385272400033X}
   \item Report bugs at \url{https://github.com/YuLab-SMU/shinyTempSignal/issues}
 }
 
